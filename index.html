@@ -1,0 +1,77 @@
+<!doctype html>
+<html ng-app="terminal" >
+  <head>
+    <style>
+      .start.active{
+        background-color:red;
+      }
+      .stop.active{
+        background-color:green;
+      }
+      .hidden{
+          display:none !important;
+      }
+    </style>
+
+    <script src="angular.min.js"></script>
+    <script src="filesaver.js"></script>
+    <script src="script.js"></script>
+  </head>
+  <body>
+<video src="http://nagi.ca/u/-1624354761.ogv" id="demo" controls>
+    <track kind="subtitles" label="English subtitles" src="track.vtt" srclang="en" default></track>
+  
+</video>
+
+
+<div ng-controller="TerminalControl">
+
+<div style="position:relative; width:100%; height:10px;background-color:blue">
+    <div ng-repeat="line in lines" >
+        <span ng-class="{hidden: line.start==0}" style="left:{{percentage(line.start)}}%;top:-10px;position:absolute; display:block; width:5px; height:10px; background-color:red"></span>
+        <span ng-class="{hidden: line.end==0}" style="left:{{percentage(line.end)}}%;bottom:-10px;position:absolute; display:block; width:5px; height:10px; background-color:green"></span>
+    </div>
+    
+</div>
+
+<input  on-keypress="handleKeypress($event)" style="height:50px;width:500px;background-color:gray;" value="Focus in this box to use keyboard command, I have not yet figured out how to bind key board event in window yet.">
+  
+<textarea ng-model="source" rows="10" cols="50">
+  
+</textarea> 
+<br />
+
+<button ng-click="generate()">Generate</button>
+<button ng-click="begin()" ng-disabled="!generated">begin</button>
+<button ng-click="start()" ng-disabled="!hasBegun">{</button>
+<button ng-click="end()" ng-disabled="!hasBegun">}</button>
+<button ng-click="pause()" ng-disabled="!hasBegun"> pause</button>
+
+
+<ul>
+  <li ng-repeat="line in lines" >
+  
+    <input value="{{line.words}}">{:<input class="start" ng-class="{active: $index==counter+1}" data-value="{{line.start}}" value="{{convert(line.start)}}">}:<input class="stop" ng-class="{active: $index==counter}" data-value="{{line.end}}" value="{{convert(line.end)}}"><button ng-click="remove($index)">X</button>
+  </li>
+  
+</ul>
+<h4>.json</h4>
+<textarea disabled rows="10" cols="50">
+{{jsonOutput(lines)}}
+</textarea>
+<h4>.srt</h4>
+<textarea disabled rows="10" cols="50">
+{{srtOutput(lines)}}  
+</textarea>
+
+<h4>.vtt</h4>
+<textarea disabled rows="10" cols="50">
+{{vttOutput(lines)}}  
+</textarea>
+
+
+</div>
+
+
+  </body>
+</html>

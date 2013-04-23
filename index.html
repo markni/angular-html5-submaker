@@ -17,14 +17,14 @@
     <script src="filesaver.js"></script>
     <script src="script.js"></script>
   </head>
-  <body>
+  <body ng-controller="TerminalControl">
 <video src="http://nagi.ca/u/-1624354761.ogv" id="demo" controls>
     <track kind="subtitles" label="English subtitles" src="track.vtt" srclang="en" default></track>
   
 </video>
 
 
-<div ng-controller="TerminalControl">
+<div >
 
 <div style="position:relative; width:100%; height:10px;background-color:blue">
     <div ng-repeat="line in lines" >
@@ -34,9 +34,9 @@
     
 </div>
 
-<input  on-keypress="handleKeypress($event)" style="height:50px;width:500px;background-color:gray;" value="Focus in this box to use keyboard command, I have not yet figured out how to bind key board event in window yet.">
+<input  on-keypress="handleKeypress($event)"  style="height:50px;width:500px;background-color:gray;" value="Focus in this box to use keyboard command, I have not yet figured out how to bind key board event in window yet.">
   
-<textarea ng-model="source" rows="10" cols="50">
+<textarea ng-model="source" rows="10" cols="50" ng-change="generate()">
   
 </textarea> 
 <br />
@@ -46,12 +46,16 @@
 <button ng-click="start()" ng-disabled="!hasBegun">{</button>
 <button ng-click="end()" ng-disabled="!hasBegun">}</button>
 <button ng-click="pause()" ng-disabled="!hasBegun"> pause</button>
+<button ng-click="download('vtt')">Download</button>
 
 
 <ul>
   <li ng-repeat="line in lines" >
   
-    <input value="{{line.words}}">{:<input class="start" ng-class="{active: $index==counter+1}" data-value="{{line.start}}" value="{{convert(line.start)}}">}:<input class="stop" ng-class="{active: $index==counter}" data-value="{{line.end}}" value="{{convert(line.end)}}"><button ng-click="remove($index)">X</button>
+    <input value="{{line.words}}" ng-model="line.words">
+    {:<input class="start" ng-class="{active: $index==counter+1}" data-value="{{line.start}}" value="{{convert(line.start)}}" disabled>
+    }:<input class="stop" ng-class="{active: $index==counter}" data-value="{{line.end}}" value="{{convert(line.end)}}" disabled>
+    <button ng-click="remove($index)">X</button>
   </li>
   
 </ul>
@@ -64,7 +68,8 @@
 {{srtOutput(lines)}}  
 </textarea>
 
-<h4>.vtt</h4>
+<h4 >.vtt</h4> 
+
 <textarea disabled rows="10" cols="50">
 {{vttOutput(lines)}}  
 </textarea>

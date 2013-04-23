@@ -11,6 +11,8 @@ function TerminalControl($scope) {
     
     $scope.generated = false;
     $scope.hasBegun = false;
+    $scope.generatedFiles = {};
+    
     var v = document.getElementById('demo');
     
     function convertSec(sec){
@@ -55,6 +57,7 @@ function TerminalControl($scope) {
         output += array[i].words;
         output += '\n\n';
       }
+      $scope.generatedFiles.vtt = output;
       return output;  
     }
 
@@ -138,8 +141,7 @@ function TerminalControl($scope) {
     }
     
     $scope.generate = function() {
-        var blob = new Blob(["Hello, world!"], {type: "text/plain;charset=utf-8"});
-saveAs(blob, "hello world.txt");
+
 
       $scope.counter = -1
       $scope.lines = [];
@@ -163,6 +165,12 @@ saveAs(blob, "hello world.txt");
     
     $scope.pause = function(){
       v.pause();
+    }
+    
+    $scope.download = function(type){
+
+        var blob = new Blob([$scope.generatedFiles[type]], {type: "text/plain;charset=utf-8"});
+        saveAs(blob, "Friday"+"."+type);
     }
   
 }

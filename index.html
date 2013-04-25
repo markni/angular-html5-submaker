@@ -1,82 +1,165 @@
 <!doctype html>
-<html ng-app="terminal" >
-  <head>
-    <style>
-      .start.active{
-        background-color:red;
-      }
-      .stop.active{
-        background-color:green;
-      }
-      .hidden{
-          display:none !important;
-      }
-    </style>
-
-    <script src="angular.min.js"></script>
-    <script src="filesaver.js"></script>
-    <script src="script.js"></script>
-  </head>
-  <body ng-controller="TerminalControl">
-<video src="http://nagi.ca/u/-1624354761.ogv" id="demo" controls>
-    <track kind="subtitles" label="English subtitles" src="track.vtt" srclang="en" default></track>
-  
-</video>
-
-
-<div >
-
-<div style="position:relative; width:100%; height:10px;background-color:blue">
-    <div ng-repeat="line in lines" >
-        <span ng-class="{hidden: line.start==0}" style="left:{{percentage(line.start)}}%;top:-10px;position:absolute; display:block; width:5px; height:10px; background-color:red"></span>
-        <span ng-class="{hidden: line.end==0}" style="left:{{percentage(line.end)}}%;bottom:-10px;position:absolute; display:block; width:5px; height:10px; background-color:green"></span>
-    </div>
+<html ng-app="terminal">
     
-</div>
+    <head>
+        <meta charset='utf-8'>
+        <link href="css/bootstrap.css" rel="stylesheet">
+        <link href="css/bootstrap-responsive.css" rel="stylesheet">
+        <link href="css/style.css" rel="stylesheet">
 
-<input  on-keypress="handleKeypress($event)"  style="height:50px;width:500px;background-color:gray;" value="Focus in this box to use keyboard command, I have not yet figured out how to bind key board event in window yet.">
-  
-<textarea ng-model="source" rows="10" cols="50" ng-change="generate()">
-  
-</textarea> 
-<br />
+        <script src="angular.min.js"></script>
+        <script src="jquery-1.9.1.min.js"></script>
+        <script src="bootstrap.min.js"></script>
+        <script src="filesaver.js"></script>
+        <script src="script.js"></script>
+    </head>
+    
+    <body ng-controller="TerminalControl">
+        <div>
+            <ul class="breadcrumb">
+                <li class="active">
+                    <a ng-click="active=0">1.Select Media Source</a>
+                    <span class="divider" ng-show="videoUrl">→</span>
+                </li>
+                <li ng-show="videoUrl">
+                    <a ng-click="active=1">2. Input Exsiting Transcript</a>
+                    <span class="divider" ng-show="videoUrl&&lines.length>0">→</span>
+                </li>
+                <li ng-show="videoUrl&&lines.length>0">
+                    <a ng-click="active=2">3. Editing</a>
+                </li>
+            </ul>
+            <input type="file" id="fileSelector" file-selector style="display:none;"
+            accept=".mp4,video/*">
+            <div class="jumbotron  container-fluid text-center" drop-zone ng-show="active==0">
+                <div class="row-fluid masthead" ng-hide="videoUrl">
+                    <h1>Ultrasub</h1>
+                    <p>Simply drag and drop your video in this page to start</p>
+                    <p>
+                        <button ng-click="openFileSelector()" class="btn btn-primary btn-large"
+                        type="button">Select File</button>
+                    </p>
+                </div>
+                <div class="row-fluid" ng-show="videoUrl" style: "display:none;">
+                    <video class="span8 offset2" src="{{videoUrl}}" id="preview" controls>Loading....
+                        <track kind="subtitles" label="English subtitles" src="track.vtt"
+                        srclang="en" default></track>
+                    </video>
+                </div>
+                <p></p>
+                <div class="row-fluid " ng-show="videoUrl" style: "display:none;">
+                    <p>
+                        <button class="btn btn-primary btn-large  " type="button" ng-click="active=1">Looks great, continue!</button>
+                    </p>
+                    <p>or you go drop in another file or
+                        <a class='link' ng-click="openFileSelector()">select one</a>&nbsp;from your computer</p>
+                </div>
+            </div>
+            <div class="container-fluid" ng-show="active==1" style:
+            "display:none;">
+                <div class="row-fluid">
+                    <textarea class="span8 offset2" ng-model="source" rows="20"></textarea>
+                </div>
+                <div class="row-fluid">
+                    <p class="span8 offset2 text-right">
+                        <button class="btn btn-primary btn-large" ng-click="generate()">Generate</button>
+                    </p>
+                </div>
+            </div>
+            <div class="container-fluid" ng-show="active==2" style:
+            "display:none;">
+                <div class="row-fluid">
+                    <div class="span4">
+                        <div class="row-fluid">
+                            <video time-tracker class="span12" ng-show="videoUrl" src="{{videoUrl}}"
+                            id="editingview" controls>
+              
+                            </video>
+                        </div>
+                        <h4>.json</h4>
+                        <textarea disabled rows="10" class="span12">{{jsonOutput(lines)}}</textarea>
+                        <h4>.srt</h4>
+                        <textarea disabled rows="10" class="span12">{{srtOutput(lines)}}</textarea>
+                        <h4>.vtt</h4>
+                        <textarea disabled rows="10" class="span12">{{vttOutput(lines)}}</textarea>
+                    </div>
+                    <div class="span8">
+                        <div class="row-fluid">
+                            <button class="btn btn-large" ng-click="begin()" ng-disabled="!generated">Begin</button>
+                            <button class="btn btn-large" ng-click="start()" ng-disabled="!hasBegun">{</button>
+                            <button class="btn btn-large" disabled>{{currentPlayTime}}</button>
+                            <button class="btn btn-large" ng-click="end()"
+                            ng-disabled="!hasBegun">}</button>
+                            <button class="btn btn-large" ng-click="pause()" ng-disabled="!hasBegun">Pause</button>
+                            <div class="btn-group">
+                                <button class="btn dropdown-toggle btn-info btn-large" data-toggle="dropdown">Download
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a ng-click="download('vtt')">.vtt fomart</a>
+                                        <a ng-click="download('srt')">.srt fomart</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p></p>
+                        <p></p>
+                        <div class="row-fluid">
+                            <ul class="unstyled">
+                                <li ng-repeat="line in lines">
+                                    <div class="form-horizontal">
+                                        <button class="btn " ng-click="back($index,'start')">←</button>
+                                        <button class="start btn " ng-click="" ng-class="{'btn-primary': $index==counter+1}"
+                                        data-value="{{line.start}}">{{convert(line.start)}}</button>
+                                        <button class="btn " ng-click="forward($index,'start')">→</button>
+                                        <input class="input span4" type="text" value="{{line.words}}"
+                                        ng-model="line.words">
+                                        <button class="btn" ng-click="back($index,'end')">←</button>
+                                        <button class="stop btn " ng-click="" ng-class="{'btn-info': $index==counter}"
+                                        data-value="{{line.end}}">{{convert(line.end)}}</button>
+                                        <button class="btn " ng-click="forward($index,'end')">→</button>
+                                        <button class="btn btn-primary" ng-click="add($index)">+</button>
+                                        <button class="btn btn-primary" ng-click="remove($index)">X</button>
+                                    </div>
+                                    <p></p>
+                                </li>
+                                <!--<li ng-repeat="line in lines">-->
+                                <!-- <div class="input-prepend input-append">-->
+                                <!-- <button class="btn " ng-click="back($index,'start')">←</button>-->
+                                <!-- <button class="start btn " ng-click="" ng-class="{'btn-primary':
+                                $index==counter+1}"-->
+                                <!-- data-value="{{line.start}}">{{convert(line.start)}}</button>-->
+                                <!-- <button class="btn " ng-click="forward($index,'start')">→</button>-->
+                                <!-- <input class="input-mini span6" type="text" value="{{line.words}}"-->
+                                <!-- ng-model="line.words">-->
+                                <!-- <button class="btn" ng-click="back($index,'end')">←</button>-->
+                                <!-- <button class="stop btn " ng-click="" ng-class="{'btn-info': $index==counter}"-->
+                                <!-- data-value="{{line.end}}">{{convert(line.end)}}</button>-->
+                                <!-- <button class="btn " ng-click="forward($index,'end')">→</button>-->
+                                <!-- <button class="btn btn-primary" ng-click="add($index)">+</button>-->
+                                <!-- <button class="btn btn-primary" ng-click="remove($index)">X</button>-->
+                                <!-- </div>-->
+                                <!--</li>-->
+                            </ul>
+                        </div>
+                        <div style="display:none">
+                            <!--<div style="position:relative; width:100%; height:10px;background-color:blue">-->
+                            <!-- <div ng-repeat="line in lines">-->
+                            <!-- <span ng-class="{hidden: line.start==0}" style="left:{{percentage(line.start)}}%;top:-10px;position:absolute;
+                            display:block; width:5px; height:10px; background-color:red"></span>-->
+                            <!-- <span ng-class="{hidden: line.end==0}" style="left:{{percentage(line.end)}}%;bottom:-10px;position:absolute;
+                            display:block; width:5px; height:10px; background-color:green"></span>-->
+                            <!-- </div>-->
+                            <!--</div>-->
+                            <!--<input on-keypress="handleKeypress($event)" style="height:50px;width:500px;background-color:gray;"-->
+                            <!--value="Focus in this box to use keyboard command, I have not yet figured
+                            out how to bind key board event in window yet.">-->
+                            <!--<br />--></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
 
-<button ng-click="generate()">Generate</button>
-<button ng-click="begin()" ng-disabled="!generated">begin</button>
-<button ng-click="start()" ng-disabled="!hasBegun">{</button>
-<button ng-click="end()" ng-disabled="!hasBegun">}</button>
-<button ng-click="pause()" ng-disabled="!hasBegun"> pause</button>
-<button ng-click="download('vtt')">Download</button>
-
-
-<ul>
-  <li ng-repeat="line in lines" >
-  
-    <input value="{{line.words}}" ng-model="line.words">
-    {:<input class="start" ng-class="{active: $index==counter+1}" data-value="{{line.start}}" value="{{convert(line.start)}}" disabled>
-    }:<input class="stop" ng-class="{active: $index==counter}" data-value="{{line.end}}" value="{{convert(line.end)}}" disabled>
-    <button ng-click="remove($index)">X</button>
-  </li>
-  
-</ul>
-<h4>.json</h4>
-<textarea disabled rows="10" cols="50">
-{{jsonOutput(lines)}}
-</textarea>
-<h4>.srt</h4>
-<textarea disabled rows="10" cols="50">
-{{srtOutput(lines)}}  
-</textarea>
-
-<h4 >.vtt</h4> 
-
-<textarea disabled rows="10" cols="50">
-{{vttOutput(lines)}}  
-</textarea>
-
-
-</div>
-
-
-  </body>
 </html>

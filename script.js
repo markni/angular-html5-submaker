@@ -7,7 +7,7 @@ function TerminalControl($scope) {
     var timer;
 
     $scope.active = 0;
-    $scope.source = 'Paste your source transcript here';
+    $scope.source = 'Paste your source transcript here\nThis is the second line\nThis is the third line';
     $scope.lines = [];
     $scope.videoUrl = null;
 
@@ -24,6 +24,10 @@ function TerminalControl($scope) {
 
 
 
+
+
+
+
     $scope.convert = function(milli, deli) {
         if (!deli) deli = ','
         var milliseconds = milli % 1000;
@@ -35,7 +39,13 @@ function TerminalControl($scope) {
 
     $scope.currentPlayTime = "00:00.0000";
 
-    $scope.navigatedTo = function(milli, autoplay) {
+    $scope.navigatedTo = function(start, i, milli, autoplay) {
+        if (start) {
+            $scope.counter = i - 1;
+        }
+        else {
+            $scope.counter = i;
+        }
         return navigatedTo(milli, autoplay);
     }
 
@@ -45,8 +55,8 @@ function TerminalControl($scope) {
         autoplay && v.play();
 
     }
-    
-    $scope.openFileSelector = function(){
+
+    $scope.openFileSelector = function() {
         var fileSelector = document.getElementById('fileSelector');
         performClick(fileSelector);
     }
@@ -66,8 +76,63 @@ function TerminalControl($scope) {
 
 
     $scope.jsonOutput = function(json) {
+        console.log('json');
         return angular.toJson(json, true);
     }
+    $scope.createTrack = function(array) {
+        var track;
+        if (v.textTracks && v.textTracks[0]){
+            console.log('has old cues!'); //clear old tracks
+            track = v.textTracks[0];
+            if (track.cues){
+                var len = track.cues.length;
+                for (var i =0;i<len;i++){
+                    track.cues && track.cues[0] && track.removeCue(track.cues[0]);
+                }    
+            }
+            
+        }
+        else{
+            console.log('no old cues!');
+            track = v.addTextTrack("subtitles");    
+        }
+        
+        if (isNaN(v.textTracks[0].mode)) {
+            track.mode = "showing";
+        }
+        else {
+            track.mode = 2;
+        }
+         
+        for (var i = 0; i < array.length; i++) {
+            
+            var begin = array[i].begin / 1000;
+            var next  = (array[i + 1] === undefined) ? (v.duration || 0) : (array[i + 1].begin) / 1000;
+            next = next ? next - 0.001 : next;
+            
+            var end = (array[i].end) ? (array[i].end / 1000) : next;
+            
+            var text = array[i].words;
+            
+            if (begin && end && text){
+                track.addCue(createCue(begin, end, text));
+                console.log('addCue: ' + text +' ' + begin + ' --> ' + end);
+            }
+        }
+
+
+    }
+
+    function createCue(start, end, text) {
+        var cue;
+        if (isNaN(v.textTracks[0].mode)) {
+            cue = new TextTrackCue(start, end, text);
+        }
+        else {
+            cue = new TextTrackCue(text, start, end, '', '', '', true);
+        }
+        return cue;
+    };
 
     $scope.vttOutput = function(array) {
         var output = "WEBVTT\n\n";
@@ -75,34 +140,38 @@ function TerminalControl($scope) {
             output += i + 1;
             output += '\n';
             //debugger;
-            output += $scope.convert(array[i].start, '.') + ' --> ';
+            output += $scope.convert(array[i].begin, '.') + ' --> ';
 
-            var next = (array[i + 1] === undefined) ? convertSec(v.duration || 0) : array[i + 1].start;
+            var next = (array[i + 1] === undefined) ? convertSec(v.duration || 0) : array[i + 1].begin;
             if (next === undefined) debugger;
             next = next ? next - 1 : next;
-            console.log('next: ' + next);
             output += $scope.convert((array[i].end) ? (array[i].end) : next, '.');
             output += '\n';
             output += array[i].words;
             output += '\n\n';
+            
+
+
+            
         }
         $scope.generatedFiles.vtt = output;
+        $scope.createTrack(array);
         return output;
     }
 
     $scope.srtOutput = function(array) {
-        console.log(array);
+
         var output = "";
         for (var i = 0; i < array.length; i++) {
             output += i + 1;
             output += '\n';
             //debugger;
-            output += $scope.convert(array[i].start) + ' --> ';
+            output += $scope.convert(array[i].begin) + ' --> ';
 
-            var next = (array[i + 1] === undefined) ? convertSec(v.duration || 0) : array[i + 1].start;
+            var next = (array[i + 1] === undefined) ? convertSec(v.duration || 0) : array[i + 1].begin;
             if (next === undefined) debugger;
             next = next ? next - 1 : next;
-            console.log('next: ' + next);
+
             output += $scope.convert((array[i].end) ? (array[i].end) : next);
             output += '\n';
             output += array[i].words;
@@ -112,14 +181,14 @@ function TerminalControl($scope) {
         return output;
     }
 
-    $scope.start = function(e) {
+    $scope.begin = function(e) {
         if ($scope.counter >= $scope.lines.length - 1) {
             return false;
         }
         $scope.counter++;
-        //$scope.lines[counter].start = Date.now() - timer; 
+        //$scope.lines[counter].begin = Date.now() - timer; 
 
-        $scope.lines[$scope.counter].start = parseInt(v.currentTime * 1000);
+        $scope.lines[$scope.counter].begin = parseInt(v.currentTime * 1000);
     }
 
     $scope.end = function(e) {
@@ -134,7 +203,7 @@ function TerminalControl($scope) {
         }
     }
 
-    $scope.begin = function(e) {
+    $scope.start = function(e) {
         v.currentTime = 0;
         v.play();
         //document.getElementById('demo').play()
@@ -148,7 +217,7 @@ function TerminalControl($scope) {
         e.stopPropagation();
         if (e.which == 32) {
 
-            $scope.start();
+            $scope.begin();
 
         }
         else if (e.which === 115) {
@@ -158,15 +227,13 @@ function TerminalControl($scope) {
         }
         else if (e.which === 13) {
             //s
-            $scope.begin();
+            $scope.start();
 
         }
         $scope.$apply();
     };
 
     $scope.percentage = function(time) {
-        console.log(time);
-        console.log(convertSec(v.duration));
         return (time / convertSec(v.duration)) * 100
     }
 
@@ -180,7 +247,7 @@ function TerminalControl($scope) {
             if (raw[i].trim() !== "") {
                 $scope.lines.push({
                     words: raw[i],
-                    start: 0,
+                    begin: 0,
                     end: 0
                 })
             }
@@ -189,20 +256,20 @@ function TerminalControl($scope) {
 
         $scope.generated = true;
         $scope.active = 2;
-        console.log($scope.lines);
+
 
     }
 
     $scope.remove = function(i) {
-        console.log('remove:' + i);
+
         $scope.lines.splice(i, 1);
     }
 
     $scope.add = function(i) {
-        console.log('add after:' + i);
+        v.pause();
         $scope.lines.splice(i + 1, 0, {
             words: "@",
-            start: 0,
+            begin: parseInt(v.currentTime*1000) ||0,
             end: 0
         });
     }
@@ -224,13 +291,13 @@ function TerminalControl($scope) {
         if (e.preventDefault) e.preventDefault();
     }
 
-    $scope.onFileSelected = function(e){
+    $scope.onFileSelected = function(e) {
         var f = this.files[0];
         var fileURL = URL.createObjectURL(f);
-                $scope.videoUrl = fileURL;
+        $scope.videoUrl = fileURL;
         $scope.$apply();
 
-        
+
     }
 
     $scope.onDrop = function(e) {
@@ -262,11 +329,16 @@ function TerminalControl($scope) {
         return false;
     }
 
-    $scope.onDragStart = function(e) {
+    $scope.onDragbegin = function(e) {
         stopEvent(e);
         e.dataTransfer.dropEffect = 'copy';
         return false;
 
+    }
+
+    $scope.setToCurrentTime = function(i,target){
+       $scope.lines[i][target] = parseInt(v.currentTime *1000);  
+        
     }
 
     $scope.back = function(i, target) {
@@ -320,7 +392,7 @@ terminal.directive("dropZone", function() {
 
         elm.bind('dragover', scope.onDragOver);
 
-        elm.bind('dragenter', scope.onDragStart);
+        elm.bind('dragenter', scope.onDragbegin);
 
         elm.bind('dragleave', scope.onDragLeave);
 
@@ -330,18 +402,11 @@ terminal.directive("dropZone", function() {
 
 });
 
-terminal.directive('fileSelector',function(){
-    return function(scope,elm){
-        elm.bind('change',scope.onFileSelected);
+terminal.directive('fileSelector', function() {
+    return function(scope, elm) {
+        elm.bind('change', scope.onFileSelected);
     }
-    
+
 })
 
-terminal.directive("timeTracker", function() {
-    return function(scope, elm) {
 
-        elm.bind('timeupdate', scope.onTimeUpdate);
-
-    }
-
-});

@@ -34,7 +34,7 @@
             <div class="jumbotron  container-fluid text-center" drop-zone ng-show="active==0">
                 <div class="row-fluid masthead" ng-hide="videoUrl">
                     <h1>Ultrasub</h1>
-                    <p>Simply drag and drop your video in this page to start</p>
+                    <p>Simply drag and drop your video in this page to begin</p>
                     <p>
                         <button ng-click="openFileSelector()" class="btn btn-primary btn-large"
                         type="button">Select File</button>
@@ -42,8 +42,7 @@
                 </div>
                 <div class="row-fluid" ng-show="videoUrl" style: "display:none;">
                     <video class="span8 offset2" src="{{videoUrl}}" id="preview" controls>Loading....
-                        <track kind="subtitles" label="English subtitles" src="track.vtt"
-                        srclang="en" default></track>
+
                     </video>
                 </div>
                 <p></p>
@@ -71,7 +70,7 @@
                 <div class="row-fluid">
                     <div class="span4">
                         <div class="row-fluid">
-                            <video time-tracker class="span12" ng-show="videoUrl" src="{{videoUrl}}"
+                            <video  class="span12" ng-show="videoUrl" src="{{videoUrl}}"
                             id="editingview" controls>
               
                             </video>
@@ -85,14 +84,14 @@
                     </div>
                     <div class="span8">
                         <div class="row-fluid">
-                            <button class="btn btn-large" ng-click="begin()" ng-disabled="!generated">Begin</button>
-                            <button class="btn btn-large" ng-click="start()" ng-disabled="!hasBegun">{</button>
-                            <button class="btn btn-large" disabled>{{currentPlayTime}}</button>
-                            <button class="btn btn-large" ng-click="end()"
+                            <button class="btn btn-large" ng-click="start()" ng-disabled="!generated">Start</button>
+                            <button class="btn btn-large btn-primary" ng-click="begin()" ng-disabled="!hasBegun">{</button>
+                           
+                            <button class="btn btn-large btn-info" ng-click="end()"
                             ng-disabled="!hasBegun">}</button>
                             <button class="btn btn-large" ng-click="pause()" ng-disabled="!hasBegun">Pause</button>
                             <div class="btn-group">
-                                <button class="btn dropdown-toggle btn-info btn-large" data-toggle="dropdown">Download
+                                <button class="btn dropdown-toggle btn-warning btn-large" data-toggle="dropdown">Download
                                     <span class="caret"></span>
                                 </button>
                                 <ul class="dropdown-menu">
@@ -109,15 +108,21 @@
                             <ul class="unstyled">
                                 <li ng-repeat="line in lines">
                                     <div class="form-horizontal">
-                                        <button class="btn " ng-click="back($index,'start')">←</button>
-                                        <button class="start btn " ng-click="" ng-class="{'btn-primary': $index==counter+1}"
-                                        data-value="{{line.start}}">{{convert(line.start)}}</button>
-                                        <button class="btn " ng-click="forward($index,'start')">→</button>
+                                        <button class="btn " ng-click="back($index,'begin')">←</button>
+                                        <div class="btn-group">
+                                        <button class="begin btn " ng-click="navigatedTo(true,$index,line.begin)" ng-class="{'btn-primary': $index==counter+1}"
+                                        data-value="{{line.begin}}">{{convert(line.begin)}}</button>
+                                        <button class="btn " ng-click="setToCurrentTime($index,'begin')">↓</button>
+                                        </div>
+                                        <button class="btn " ng-click="forward($index,'begin')">→</button>
                                         <input class="input span4" type="text" value="{{line.words}}"
                                         ng-model="line.words">
                                         <button class="btn" ng-click="back($index,'end')">←</button>
-                                        <button class="stop btn " ng-click="" ng-class="{'btn-info': $index==counter}"
+                                        <div class="btn-group">
+                                        <button class="stop btn " ng-click="navigatedTo(false,$index,line.end)" ng-class="{'btn-info': $index==counter}"
                                         data-value="{{line.end}}">{{convert(line.end)}}</button>
+                                        <button class="btn " ng-click="setToCurrentTime($index,'end')">↓</button>
+                                        </div>
                                         <button class="btn " ng-click="forward($index,'end')">→</button>
                                         <button class="btn btn-primary" ng-click="add($index)">+</button>
                                         <button class="btn btn-primary" ng-click="remove($index)">X</button>
@@ -126,11 +131,11 @@
                                 </li>
                                 <!--<li ng-repeat="line in lines">-->
                                 <!-- <div class="input-prepend input-append">-->
-                                <!-- <button class="btn " ng-click="back($index,'start')">←</button>-->
-                                <!-- <button class="start btn " ng-click="" ng-class="{'btn-primary':
+                                <!-- <button class="btn " ng-click="back($index,'begin')">←</button>-->
+                                <!-- <button class="begin btn " ng-click="" ng-class="{'btn-primary':
                                 $index==counter+1}"-->
-                                <!-- data-value="{{line.start}}">{{convert(line.start)}}</button>-->
-                                <!-- <button class="btn " ng-click="forward($index,'start')">→</button>-->
+                                <!-- data-value="{{line.begin}}">{{convert(line.begin)}}</button>-->
+                                <!-- <button class="btn " ng-click="forward($index,'begin')">→</button>-->
                                 <!-- <input class="input-mini span6" type="text" value="{{line.words}}"-->
                                 <!-- ng-model="line.words">-->
                                 <!-- <button class="btn" ng-click="back($index,'end')">←</button>-->
@@ -146,7 +151,7 @@
                         <div style="display:none">
                             <!--<div style="position:relative; width:100%; height:10px;background-color:blue">-->
                             <!-- <div ng-repeat="line in lines">-->
-                            <!-- <span ng-class="{hidden: line.start==0}" style="left:{{percentage(line.start)}}%;top:-10px;position:absolute;
+                            <!-- <span ng-class="{hidden: line.begin==0}" style="left:{{percentage(line.begin)}}%;top:-10px;position:absolute;
                             display:block; width:5px; height:10px; background-color:red"></span>-->
                             <!-- <span ng-class="{hidden: line.end==0}" style="left:{{percentage(line.end)}}%;bottom:-10px;position:absolute;
                             display:block; width:5px; height:10px; background-color:green"></span>-->
